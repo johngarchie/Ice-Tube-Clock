@@ -32,6 +32,7 @@ THE SOFTWARE.
 #define BRRL_192 26    
 #endif
 
+#undef nop
 #define NOP asm("nop");
 #define uart_putc(c) uart_putchar(c)
 
