@@ -67,7 +67,6 @@ uint8_t currdigit = 0;        // which digit we are currently multiplexing
 const uint8_t digittable[] PROGMEM = {
   DIG_9, DIG_8, DIG_7, DIG_6, DIG_5, DIG_4, DIG_3, DIG_2, DIG_1
 };
-PGM_P digittable_p PROGMEM = digittable;
 
 // This table allow us to index between what segment we want to light up
 // and what the pin number is on the MAX6921 see the .h for values.
@@ -75,7 +74,6 @@ PGM_P digittable_p PROGMEM = digittable;
 const uint8_t segmenttable[] PROGMEM = {
   SEG_H, SEG_G,  SEG_F,  SEG_E,  SEG_D,  SEG_C,  SEG_B,  SEG_A 
 };
-PGM_P segmenttable_p PROGMEM = segmenttable;
 
 // muxdiv and MUX_DIVIDER divides down a high speed interrupt (31.25KHz)
 // down so that we can refresh at about 100Hz (31.25KHz / 300)
@@ -121,7 +119,7 @@ void kickthedog(void) {
 }
 
 // called @ (F_CPU/256) = ~30khz (31.25 khz)
-SIGNAL (SIG_OVERFLOW0) {
+SIGNAL (TIMER0_OVF_vect) {
   // allow other interrupts to go off while we're doing display updates
   sei();
 
@@ -183,7 +181,7 @@ volatile uint8_t last_buttonstate = 0, just_pressed = 0, pressed = 0;
 volatile uint8_t buttonholdcounter = 0;
 
 // This interrupt detects switches 1 and 3
-SIGNAL(SIG_PIN_CHANGE2) {
+SIGNAL(PCINT2_vect) {
   PCICR = 0;
   // allow interrupts while we're doing this
   sei();
@@ -249,7 +247,7 @@ SIGNAL(SIG_PIN_CHANGE2) {
 }
 
 // Just button #2
-SIGNAL(SIG_PIN_CHANGE0) {
+SIGNAL(PCINT0_vect) {
   PCICR = 0;
   sei();
   if (! (PINB & _BV(BUTTON2))) {
@@ -375,7 +373,7 @@ SIGNAL (TIMER2_OVF_vect) {
   }
 }
 
-SIGNAL(SIG_INTERRUPT0) {
+SIGNAL(INT0_vect) {
   uart_putchar('i');
   uint8_t x = ALARM_PIN & _BV(ALARM);
   sei();
@@ -387,7 +385,7 @@ SIGNAL(SIG_INTERRUPT0) {
 
 
 
-SIGNAL(SIG_COMPARATOR) {
+SIGNAL(ANALOG_COMP_vect) {
   //DEBUGP("COMP");
   if (ACSR & _BV(ACO)) {
     //DEBUGP("HIGH");
@@ -972,8 +970,8 @@ void set_brightness(void) {
 	mode = SET_BRITE;
 	// display brightness
 	display_str("brite ");
-	display[7] = pgm_read_byte(numbertable_p + (brightness / 10)) | 0x1;
-	display[8] = pgm_read_byte(numbertable_p + (brightness % 10)) | 0x1;
+	display[7] = pgm_read_byte(numbertable + (brightness / 10)) | 0x1;
+	display[8] = pgm_read_byte(numbertable + (brightness % 10)) | 0x1;
       } else {	
 	displaymode = SHOW_TIME;
 	eeprom_write_byte((uint8_t *)EE_BRIGHT, brightness);
@@ -986,8 +984,8 @@ void set_brightness(void) {
 	brightness += 5;
 	if (brightness > 91)
 	  brightness = 30;
-	display[7] = pgm_read_byte(numbertable_p + (brightness / 10)) | 0x1;
-	display[8] = pgm_read_byte(numbertable_p + (brightness % 10)) | 0x1;
+	display[7] = pgm_read_byte(numbertable + (brightness / 10)) | 0x1;
+	display[8] = pgm_read_byte(numbertable + (brightness % 10)) | 0x1;
 	if (brightness <= 30) {
 	  OCR0A = 30; 
 	} else if (brightness <= 35) {
@@ -1164,8 +1162,8 @@ void set_snooze(void) {
 	mode = SET_SNOOZE;
 	// display snooze
 	display_str("   minut");
-	display[1] = pgm_read_byte(numbertable_p + (snooze / 10)) | 0x1;
-	display[2] = pgm_read_byte(numbertable_p + (snooze % 10)) | 0x1;
+	display[1] = pgm_read_byte(numbertable + (snooze / 10)) | 0x1;
+	display[2] = pgm_read_byte(numbertable + (snooze % 10)) | 0x1;
       } else { 
 	displaymode = SHOW_TIME;
 	return;
@@ -1177,8 +1175,8 @@ void set_snooze(void) {
         snooze ++;
 	if (snooze >= 100)
 	  snooze = 0;
-	display[1] = pgm_read_byte(numbertable_p + (snooze / 10)) | 0x1;
-	display[2] = pgm_read_byte(numbertable_p + (snooze % 10)) | 0x1;
+	display[1] = pgm_read_byte(numbertable + (snooze / 10)) | 0x1;
+	display[2] = pgm_read_byte(numbertable + (snooze % 10)) | 0x1;
 	eeprom_write_byte((uint8_t *)EE_SNOOZE, snooze);
       }
 
@@ -1406,20 +1404,20 @@ void display_date(uint8_t style) {
 
     if (region == REGION_US) {
       // mm-dd-yy
-      display[1] = pgm_read_byte(numbertable_p + (date_m / 10));
-      display[2] = pgm_read_byte(numbertable_p + (date_m % 10));
-      display[4] = pgm_read_byte(numbertable_p + (date_d / 10));
-      display[5] = pgm_read_byte(numbertable_p + (date_d % 10));
+      display[1] = pgm_read_byte(numbertable + (date_m / 10));
+      display[2] = pgm_read_byte(numbertable + (date_m % 10));
+      display[4] = pgm_read_byte(numbertable + (date_d / 10));
+      display[5] = pgm_read_byte(numbertable + (date_d % 10));
     } else {
       // dd-mm-yy
-      display[1] = pgm_read_byte(numbertable_p + (date_d / 10));
-      display[2] = pgm_read_byte(numbertable_p + (date_d % 10));
-      display[4] = pgm_read_byte(numbertable_p + (date_m / 10));
-      display[5] = pgm_read_byte(numbertable_p + (date_m % 10));
+      display[1] = pgm_read_byte(numbertable + (date_d / 10));
+      display[2] = pgm_read_byte(numbertable + (date_d % 10));
+      display[4] = pgm_read_byte(numbertable + (date_m / 10));
+      display[5] = pgm_read_byte(numbertable + (date_m % 10));
     }
     // the yy part is the same
-    display[7] = pgm_read_byte(numbertable_p + (date_y / 10));
-    display[8] = pgm_read_byte(numbertable_p + (date_y % 10));
+    display[7] = pgm_read_byte(numbertable + (date_y / 10));
+    display[8] = pgm_read_byte(numbertable + (date_y % 10));
 
   } else if (style == DAY) {
     // This is more "Sunday June 21" style
@@ -1487,8 +1485,8 @@ void display_date(uint8_t style) {
     case 12:
       display_str("decem"); break;
     }
-    display[7] = pgm_read_byte(numbertable_p + (date_d / 10));
-    display[8] = pgm_read_byte(numbertable_p + (date_d % 10));
+    display[7] = pgm_read_byte(numbertable + (date_d / 10));
+    display[8] = pgm_read_byte(numbertable + (date_d % 10));
     
   }
 }
@@ -1497,17 +1495,17 @@ void display_date(uint8_t style) {
 void display_time(uint8_t h, uint8_t m, uint8_t s) {
   
   // seconds and minutes are at the end
-  display[8] =  pgm_read_byte(numbertable_p + (s % 10));
-  display[7] =  pgm_read_byte(numbertable_p + (s / 10));
+  display[8] =  pgm_read_byte(numbertable + (s % 10));
+  display[7] =  pgm_read_byte(numbertable + (s / 10));
   display[6] = 0;
-  display[5] =  pgm_read_byte(numbertable_p + (m % 10));
-  display[4] =  pgm_read_byte(numbertable_p + (m / 10)); 
+  display[5] =  pgm_read_byte(numbertable + (m % 10));
+  display[4] =  pgm_read_byte(numbertable + (m / 10)); 
   display[3] = 0;
 
   // check euro (24h) or US (12h) style time
   if (region == REGION_US) {
-    display[2] =  pgm_read_byte(numbertable_p + ( (((h+11)%12)+1) % 10));
-    display[1] =  pgm_read_byte(numbertable_p + ( (((h+11)%12)+1) / 10));
+    display[2] =  pgm_read_byte(numbertable + ( (((h+11)%12)+1) % 10));
+    display[1] =  pgm_read_byte(numbertable + ( (((h+11)%12)+1) / 10));
 
     // We use the '*' as an am/pm notice
     if (h >= 12)
@@ -1515,8 +1513,8 @@ void display_time(uint8_t h, uint8_t m, uint8_t s) {
     else 
       display[0] &= ~0x1;  // 'pm' notice
   } else {
-    display[2] =  pgm_read_byte(numbertable_p + ( (h%24) % 10));
-    display[1] =  pgm_read_byte(numbertable_p + ( (h%24) / 10));
+    display[2] =  pgm_read_byte(numbertable + ( (h%24) % 10));
+    display[1] =  pgm_read_byte(numbertable + ( (h%24) / 10));
   }
 }
 
@@ -1525,26 +1523,26 @@ void display_alarm(uint8_t h, uint8_t m){
   display[8] = 0;
   display[7] = 0;
   display[6] = 0;
-  display[5] = pgm_read_byte(numbertable_p + (m % 10));
-  display[4] = pgm_read_byte(numbertable_p + (m / 10)); 
+  display[5] = pgm_read_byte(numbertable + (m % 10));
+  display[4] = pgm_read_byte(numbertable + (m / 10)); 
   display[3] = 0;
 
   // check euro or US style time
   if (region == REGION_US) {
     if (h >= 12) {
       display[0] |= 0x1;  // 'pm' notice
-      display[7] = pgm_read_byte(alphatable_p + 'p' - 'a');
+      display[7] = pgm_read_byte(alphatable + 'p' - 'a');
     } else {
-      display[7] = pgm_read_byte(alphatable_p + 'a' - 'a');
+      display[7] = pgm_read_byte(alphatable + 'a' - 'a');
       display[0] &= ~0x1;  // 'am' notice
     }
-    display[8] = pgm_read_byte(alphatable_p + 'm' - 'a');
+    display[8] = pgm_read_byte(alphatable + 'm' - 'a');
 
-    display[2] =  pgm_read_byte(numbertable_p + ( (((h+11)%12)+1) % 10));
-    display[1] =  pgm_read_byte(numbertable_p + ( (((h+11)%12)+1) / 10));
+    display[2] =  pgm_read_byte(numbertable + ( (((h+11)%12)+1) % 10));
+    display[1] =  pgm_read_byte(numbertable + ( (((h+11)%12)+1) / 10));
   } else {
-      display[2] =  pgm_read_byte(numbertable_p + ( (((h+23)%24)+1) % 10));
-    display[1] =  pgm_read_byte(numbertable_p + ( (((h+23)%24)+1) / 10));
+      display[2] =  pgm_read_byte(numbertable + ( (((h+23)%24)+1) % 10));
+    display[1] =  pgm_read_byte(numbertable + ( (((h+23)%24)+1) / 10));
   }
 }
 
@@ -1563,9 +1561,9 @@ void display_str(char *s) {
 
     // Numbers and leters are looked up in the font table!
     if ((s[i-1] >= 'a') && (s[i-1] <= 'z')) {
-      display[i] =  pgm_read_byte(alphatable_p + s[i-1] - 'a');
+      display[i] =  pgm_read_byte(alphatable + s[i-1] - 'a');
     } else if ((s[i-1] >= '0') && (s[i-1] <= '9')) {
-      display[i] =  pgm_read_byte(numbertable_p + s[i-1] - '0');
+      display[i] =  pgm_read_byte(numbertable + s[i-1] - '0');
     } else {
       display[i] = 0;      // spaces and other stuff are ignored :(
     }
@@ -1587,14 +1585,14 @@ void setdisplay(uint8_t digit, uint8_t segments) {
   uint8_t i;
 
   // Set the digit selection pin
-  d |= _BV(pgm_read_byte(digittable_p + digit));
+  d |= _BV(pgm_read_byte(digittable + digit));
 
   
   // Set the individual segments for this digit
   for (i=0; i<8; i++) {
     if (segments & _BV(i)) {
       t = 1;
-      t <<= pgm_read_byte(segmenttable_p + i);
+      t <<= pgm_read_byte(segmenttable + i);
       d |= t;
     }
   }

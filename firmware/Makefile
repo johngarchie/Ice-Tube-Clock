@@ -103,7 +103,7 @@ LDFLAGS = -Wl,-Map=$(TARGET).map,--cref
 AVRDUDE_PROGRAMMER = usbtiny
 
 
-AVRDUDE_PORT = com1	   # programmer connected to serial device
+AVRDUDE_PORT = usb	   # programmer connected to usb device
 #AVRDUDE_PORT = /dev/cu.KeySerial1	   # programmer connected to serial device
 #AVRDUDE_PORT = /dev/cu.PL2303-0B2
 #AVRDUDE_PORT = lpt1	# programmer connected to parallel port
